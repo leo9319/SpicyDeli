@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +15,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
+    return $user = Product::with('categories')->find(1);
+    foreach ($user->categories as $target) {
+        echo $target->pivot->name;
+    }
     return view('welcome');
 });

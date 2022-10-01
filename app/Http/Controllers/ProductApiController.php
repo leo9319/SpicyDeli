@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class ProductApiController extends Controller
 {
@@ -11,31 +13,49 @@ class ProductApiController extends Controller
         return Product::with('categories')->get();
     }
 
-    public function store() {
-        request()->validate([
+    public function store(Request $request) {
+        $validated = $request->validate([
             'name' => 'required',
-            'SKU' => 'required',
+            'category' => 'required',
+            'sku' => 'required',
             'price' => 'required',
         ]);
 
-        return Product::create([
-            'name' => request('name'),
-            'SKU' => request('SKU'),
-            'price' => request('price'),
+        $product = Product::create([
+            'name' => $validated['name'],
+            'sku' => $validated['sku'],
+            'price' => $validated['price'],
         ]);
+
+        $categories = explode(", ", $validated['category']);
+
+        for($j = 0; $j < count($categories); $j++) {
+            $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
+            $product->categories()->attach($category->id);
+        }
+
+        return response([
+            'message' => 'success',
+            'data' => Product::with('categories')->find($product->id)
+        ], Response::HTTP_CREATED);
     }
 
-    public function update(Product $product) {
-        request()->validate([
+    public function show(Product $product) {
+        return Product::with('categories')->findOrFail($product->id);
+    }
+
+    public function update(Product $product, Request $request) {
+        $validated = $request->validate([
             'name' => 'required',
-            'SKU' => 'required',
+            'category' => 'required',
+            'sku' => 'required',
             'price' => 'required',
         ]);
 
         $success = $product->update([
-            'name' => request('name'),
-            'SKU' => request('SKU'),
-            'price' => request('price'),
+            'name' => $validated['name'],
+            'sku' => $validated['sku'],
+            'price' => $validated['price'],
         ]);
 
         return [
@@ -46,9 +66,7 @@ class ProductApiController extends Controller
     public function destroy(Product $product) {
         $success = $product->delete();
 
-        return [
-            'success' => $success
-        ];
+        return response(null, Response::HTTP_NO_CONTENT);
     }
 
 }
