@@ -35,7 +35,7 @@ class ProductApiController extends Controller
         }
 
         return response([
-            'message' => 'success',
+            'message' => 'product created',
             'data' => Product::with('categories')->find($product->id)
         ], Response::HTTP_CREATED);
     }
@@ -45,22 +45,27 @@ class ProductApiController extends Controller
     }
 
     public function update(Product $product, Request $request) {
-        $validated = $request->validate([
-            'name' => 'required',
-            'category' => 'required',
-            'sku' => 'required',
-            'price' => 'required',
+
+        $product->update([
+            'name' => $request['name'] ?? $product->name,
+            'sku' => $request['sku'] ?? $product->sku,
+            'price' => $request['price'] ?? $product->price,
         ]);
 
-        $success = $product->update([
-            'name' => $validated['name'],
-            'sku' => $validated['sku'],
-            'price' => $validated['price'],
-        ]);
+        if($request['category']) {
+            $product->categories()->detach();
+            $categories = explode(", ", $request['category']);
 
-        return [
-            'success' => $success
-        ];
+            for($j = 0; $j < count($categories); $j++) {
+                $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
+                $product->categories()->attach($category->id);
+            }
+        }
+
+        return response([
+            'message' => 'product updated',
+            'data' => Product::with('categories')->find($product->id)
+        ], Response::HTTP_OK);
     }
 
     public function destroy(Product $product) {
