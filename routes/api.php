@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,29 +58,8 @@ Route::get('/categories', function() {
     return Category::all();
 });
 
-Route::get('/products', function() {
-    // Product::create([
-    //     'name' => 'Sik Sik Wat',
-    //     'SKU' => 'DISH999ABCD',
-    //     'price' => 13.49
-    // ]);
-    // Product::create([
-    //     'name' => 'Huo Guo',
-    //     'SKU' => 'DISH234ZFDR',
-    //     'price' => 11.99
-    // ]);
-    // Product::create([
-    //     'name' => 'Huo Guo',
-    //     'SKU' => 'DISH775TGHY',
-    //     'price' => 15.29
-    // ]);
-    return Product::with('categories')->get();
-});
+Route::get('/products', [ProductApiController::class, 'index']);
+Route::post('/products', [ProductApiController::class, 'store']);
+Route::put('/products/{product}', [ProductApiController::class, 'update']);
+Route::delete('/products/{product}', [ProductApiController::class, 'delete']);
 
-Route::post('/products', function() {
-    return Product::create([
-        'name' => request('name'),
-        'SKU' => request('name'),
-        'price' => request('price'),
-    ]);
-});
