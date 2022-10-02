@@ -17,9 +17,9 @@ class ProductApiController extends Controller
     public function store(Request $request) {
         try {
             $validator = Validator::make($request->all(), [
-                'name' => 'required',
+                'name' => 'required|unique:products',
                 'category' => 'required',
-                'sku' => 'required',
+                'sku' => 'required|unique:products',
                 'price' => 'required',
             ]);
 
@@ -60,26 +60,43 @@ class ProductApiController extends Controller
 
     public function update(Product $product, Request $request) {
 
-        $product->update([
-            'name' => $request['name'] ?? $product->name,
-            'sku' => $request['sku'] ?? $product->sku,
-            'price' => $request['price'] ?? $product->price,
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'unique:products,name,' . $product->id,
+                'sku' => 'unique:products,sku,' . $product->id,
+            ]);
 
-        if($request['category']) {
-            $product->categories()->detach();
-            $categories = explode(", ", $request['category']);
-
-            for($j = 0; $j < count($categories); $j++) {
-                $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
-                $product->categories()->attach($category->id);
+            if($validator->fails()) {
+                return response()->json([
+                    'errors' => $validator->errors()
+                ], 400);
             }
-        }
 
-        return response([
-            'message' => 'product updated',
-            'data' => Product::with('categories')->find($product->id)
-        ], Response::HTTP_OK);
+            $product->update([
+                'name' => $request['name'] ?? $product->name,
+                'sku' => $request['sku'] ?? $product->sku,
+                'price' => $request['price'] ?? $product->price,
+            ]);
+
+            if($request['category']) {
+                $product->categories()->detach();
+                $categories = explode(", ", $request['category']);
+
+                for($j = 0; $j < count($categories); $j++) {
+                    $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
+                    $product->categories()->attach($category->id);
+                }
+            }
+
+            return response([
+                'message' => 'product updated',
+                'data' => Product::with('categories')->find($product->id)
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(),
+            ], 406);
+        }
     }
 
     public function destroy(Product $product) {
