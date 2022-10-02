@@ -18,6 +18,7 @@ class ViewCategoriesCest
         $I->seeResponseMatchesJsonType([
             'id' => 'integer',
             'name' => 'string',
+            'products' => 'array|null',
         ]);
     }
 }
