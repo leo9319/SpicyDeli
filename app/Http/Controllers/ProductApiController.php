@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Validator;
 
 class ProductApiController extends Controller
 {
@@ -14,22 +15,27 @@ class ProductApiController extends Controller
     }
 
     public function store(Request $request) {
-
-
         try {
-            $validated = $request->validate([
-                'name' => 'required|unique:products',
+            $validator = Validator::make($request->all(), [
+                'name' => 'required',
                 'category' => 'required',
                 'sku' => 'required',
                 'price' => 'required',
             ]);
+
+            if($validator->fails()) {
+                return response()->json([
+                    'errors' => $validator->errors()
+                ], 400);
+            }
+
             $product = Product::create([
-                'name' => $validated['name'],
-                'sku' => $validated['sku'],
-                'price' => $validated['price'],
+                'name' => $request['name'],
+                'sku' => $request['sku'],
+                'price' => $request['price'],
             ]);
 
-            $categories = explode(", ", $validated['category']);
+            $categories = explode(", ", $request['category']);
 
             for($j = 0; $j < count($categories); $j++) {
                 $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
