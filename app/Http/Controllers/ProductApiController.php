@@ -14,30 +14,38 @@ class ProductApiController extends Controller
     }
 
     public function store(Request $request) {
-        $validated = $request->validate([
-            'name' => 'required',
-            'category' => 'required',
-            'sku' => 'required',
-            'price' => 'required',
-        ]);
 
-        $product = Product::create([
-            'name' => $validated['name'],
-            'sku' => $validated['sku'],
-            'price' => $validated['price'],
-        ]);
 
-        $categories = explode(", ", $validated['category']);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|unique:products',
+                'category' => 'required',
+                'sku' => 'required',
+                'price' => 'required',
+            ]);
+            $product = Product::create([
+                'name' => $validated['name'],
+                'sku' => $validated['sku'],
+                'price' => $validated['price'],
+            ]);
 
-        for($j = 0; $j < count($categories); $j++) {
-            $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
-            $product->categories()->attach($category->id);
+            $categories = explode(", ", $validated['category']);
+
+            for($j = 0; $j < count($categories); $j++) {
+                $category =  Category::firstOrCreate(['name' =>  $categories[$j]]);
+                $product->categories()->attach($category->id);
+            }
+
+            return response([
+                'message' => 'product created',
+                'data' => Product::with('categories')->find($product->id)
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            return response([
+                'message' => $e->getMessage(),
+            ], 406);
+
         }
-
-        return response([
-            'message' => 'product created',
-            'data' => Product::with('categories')->find($product->id)
-        ], Response::HTTP_CREATED);
     }
 
     public function show(Product $product) {
